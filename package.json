@@ -1,15 +1,21 @@
 {
-  "name": "nobletest",
+  "name": "homebridge-reos-light-plugin",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "homebridge-plugin"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "noble": "^1.9.1",
-    "reos-lite": "^1.0.1"
+    "noble": "^1.9.1"
+  },
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0"
   }
 }
