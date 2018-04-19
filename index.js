@@ -19,17 +19,52 @@ module.exports = function(homebridge) {
 
 function ReosLite(log, config) {
 	this.log = log;
+	this.ledsStatus = {
+		"on": false
+	};
+	this.findBulb();
 }
 
-noble.on('stateChange', function(state) {
-	if (state === 'poweredOn') {
-		nobleState = 'poweredOn';
-	} else {
-		noble.stopScanning();
-	}
-});
-
 ReosLite.prototype = {
+	findBulb: function(callback) {
+		var that = this;
+		noble.on('stateChange', function(state) {
+			if (state === 'poweredOn') {
+				noble.startScanning();
+			} else {
+				noble.stopScanning();
+			}
+		});
+
+		noble.on('discover', function(peripheral) {
+			if (peripheral.advertisement.serviceUuids == "fff0") {
+				that.log("Found the Bulb!");
+				that.peripheral = peripheral;
+				noble.stopScanning();
+				that.log("Stopped Scanning");
+			}
+		});
+	},
+
+	attemptConnect: function(callback) {
+		this.log("attemptConnect");
+		if (this.peripheral && this.peripheral.state == "connected") {
+			callback(true);
+		} else if (this.peripheral && this.peripheral.state == "disconnected") {
+			this.log("lost connection to bulb. attempting reconnect ...");
+			var that = this;
+			this.peripheral.connect(function(error) {
+				if (!error) {
+					that.log("reconnect was successful");
+					callback(true);
+				} else {
+					that.log("reconnect was unsuccessful");
+					callback(false);
+				}
+			});
+		}
+	},
+
 	getServices: function() {
 		let informationService = new Service.AccessoryInformation();
 		informationService
@@ -49,42 +84,36 @@ ReosLite.prototype = {
 	},
 
 	getSwitchOnCharacteristic: function(next) {
-		const me = this;
-		me.log("Reading Status, Return False for now");
-		return next(null, false);
+		next(null, this.ledsStatus.on);
 	},
 
 	setSwitchOnCharacteristic: function(on, next) {
-		const me = this;
-		me.log("Starting Noble");
-		noble.startScanning();
-		noble.on('discover', function(peripheral) {
-			if (peripheral.advertisement.serviceUuids == "fff0") {
-				peripheral.connect(function(error) {
-					console.log('Connected to Reos-Lite: ' + peripheral.uuid);
-					peripheral.discoverServices(['fff0'], function(error, services) {
-						var deviceInformationService = services[0];
-						deviceInformationService.discoverCharacteristics(null, function(error, characteristics) {
-							var controlChar = characteristics[2];
-							var toWrite = 1 ? TURN_ON: TURN_OFF;
-							controlChar.write(new Buffer.from(toWrite, "hex"), true, function(error) {
-								if (error) {
-									me.log(error);
-									noble.stopScanning();
-									return next(error);
-								} else {
-									me.log('Turned: On');
-									noble.stopScanning();
-									return next();
-								}
-							});
-						});
+		this.log("Called Switch");
+		var that = this;
+		let code = on ? TURN_ON : TURN_OFF;
+		var switchClosure = function(res) {
+			if (!that.peripheral || !res) {
+				callback(new Error());
+				return;
+			}
+			that.peripheral.discoverServices(['fff0'], function(error, services) {
+				var deviceInformationService = services[0];
+				deviceInformationService.discoverCharacteristics(null, function(error, characteristics) {
+					var control = characteristics[2];
+					var toWrite = 1 ? TURN_ON : TURN_OFF;
+					control.write(new Buffer.from(code, "hex"), true, function(error) {
+						if (error) {
+							that.log(error);
+							next(error);
+						} else {
+							that.log('Bulb Switched ' + (on ? "ON" : "OFF"));
+							next();
+						}
 					});
 				});
-			}
-		});
-
-
-
+			});
+		};
+		this.attemptConnect(switchClosure);
+		this.ledsStatus.on = on;
 	}
 };
