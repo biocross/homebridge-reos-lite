@@ -11,8 +11,7 @@ module.exports = function(homebridge) {
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
 	if (!registeredAccessory) {
-		console.log("CALLLEDDD");
-		homebridge.registerAccessory("reos-lite-plugin", "ReosLite", ReosLite);
+		homebridge.registerAccessory("homebridge-reos-lite", "ReosLite", ReosLite);
 		registeredAccessory = true
 	}
 };
@@ -47,18 +46,18 @@ ReosLite.prototype = {
 	},
 
 	attemptConnect: function(callback) {
-		this.log("attemptConnect");
+		this.log("Attempting to Connect to the Bulb");
 		if (this.peripheral && this.peripheral.state == "connected") {
 			callback(true);
 		} else if (this.peripheral && this.peripheral.state == "disconnected") {
-			this.log("lost connection to bulb. attempting reconnect ...");
+			this.log("Lost connection to bulb. Attempting Reconnection...");
 			var that = this;
 			this.peripheral.connect(function(error) {
 				if (!error) {
-					that.log("reconnect was successful");
+					that.log("Reconnection was Successful");
 					callback(true);
 				} else {
-					that.log("reconnect was unsuccessful");
+					that.log("Reconnection was Unsuccessful");
 					callback(false);
 				}
 			});
@@ -88,7 +87,6 @@ ReosLite.prototype = {
 	},
 
 	setSwitchOnCharacteristic: function(on, next) {
-		this.log("Called Switch");
 		var that = this;
 		let code = on ? TURN_ON : TURN_OFF;
 		var switchClosure = function(res) {
