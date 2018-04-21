@@ -1,5 +1,5 @@
 {
-  "name": "homebridge-reos-light",
+  "name": "homebridge-reos-lite",
   "version": "1.0.0",
   "description": "HomeBridge HomeKit Plugin to work with the Reos Lite Bluetooth Light Bulb",
   "main": "index.js",
@@ -12,6 +12,7 @@
     "apple"
   ],
   "author": "Siddharth Gupta <sids.1992@gmail.com> (https://biocross.tumblr.com/)",
+  "repository": "https://github.com/biocross/homebridge-reos-lite",
   "license": "MIT",
   "dependencies": {
     "noble": "^1.9.1"
